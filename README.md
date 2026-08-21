@@ -1,5 +1,9 @@
 # iOS Transfer — copy iPhone photos and videos to Windows (free)
 
+<p align="center">
+  <img src="icons/icon128.png" width="128" height="128" alt="iOS Transfer — photo grid icon">
+</p>
+
 **Free, open-source Windows app** to transfer photos and videos from an iPhone or iPad over USB 3. Fast grid, real thumbnails, HEIC / Live Photos / RAW, full-resolution copies. No subscription.
 
 If you have been paying **iMazing**, using **Apple Devices / iTunes**, or waiting on Windows Explorer’s slow MTP “Apple iPhone” drive — this is the media-transfer piece of that job, without the licence.

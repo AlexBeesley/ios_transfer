@@ -60,7 +60,7 @@ const paths = await packager({
   appVersion: '1.0.0',
   win32metadata: {
     CompanyName: 'iOS Transfer',
-    FileDescription: 'Fast iPhone photo and video transfer',
+    FileDescription: 'Copy iPhone photos and videos to Windows over USB 3',
     ProductName: 'iOS Transfer',
     InternalName: 'iOS Transfer',
   },
