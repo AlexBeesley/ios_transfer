@@ -1,0 +1,12 @@
+node_modules/
+dist/
+release/
+models/
+HANDOVER.md
+src/renderer/fonts/
+*.otf
+*.woff
+*.woff2
+Thumbs.db
+.DS_Store
+*.log
