@@ -1,173 +1,135 @@
-# iOS Transfer
+# iOS Transfer — copy iPhone photos and videos to Windows (free)
 
-A Windows desktop app for pulling photos and videos off an iPhone over USB 3 —
-fast browsing, fast thumbnails, fast copies.
+**Free, open-source Windows app** to transfer photos and videos from an iPhone or iPad over USB 3. Fast grid, real thumbnails, HEIC / Live Photos / RAW, full-resolution copies. No subscription.
 
-Built as an Electron app with a hand-written implementation of Apple's USB
-stack, so there are no native modules to compile and no vendor SDK to ship.
+If you have been paying **iMazing**, using **Apple Devices / iTunes**, or waiting on Windows Explorer’s slow MTP “Apple iPhone” drive — this is the media-transfer piece of that job, without the licence.
 
-## What it does
+> This is **not** a full iPhone manager. It does not back up apps, messages, or the whole device. It copies the camera roll onto your PC, quickly.
 
-- Lists the whole camera roll in well under a second, even at 35,000 items
-- Shows real thumbnails pulled from the device's own thumbnail store
-- Displays running time on video tiles, read from each movie's header
-- Groups by capture date, with filters for photos, videos, Live Photos and RAW
-- Copies at full USB 3 speed with progress, throughput and ETA
-- Filter by file type, date range and file size; sort by date, size or name
-- Shows how much the current filter adds up to, so you can copy a subset
-- Live transfer state: current files, streams, honest throughput and ETA
-- Sets Windows' "Date created" to the capture time, so Explorer sorts correctly
-- Double-click any item to open the original in your default viewer
-- One click to drop videos under 30 seconds from a selection
-- Find stray clips: filter videos by length (1s / 2s / 5s presets, or any value)
-- Right-click for Properties; keyboard navigation throughout the grid
-- Warns before a copy that will not fit on the destination drive
-- Delete from the iPhone, behind a typed confirmation
-- Resumable — re-running a copy steps over what already arrived
-- Remembers your destination and copy options between runs
-- Flat copy by default, or sorted into `YYYY\YYYY-MM` folders; preserves capture dates
-- Understands Live Photos: the paired `.MOV` is hidden in the grid and copied
-  alongside the still
+## Why people look for this
+
+Typical searches this project is for:
+
+- transfer iPhone photos to Windows PC without iTunes
+- copy iPhone videos to computer USB 3
+- iMazing alternative Windows (photos / videos only)
+- import HEIC Live Photos to PC
+- iPhone to PC file transfer faster than Explorer
+
+Windows talks to an iPhone as **MTP** by default. MTP is fine for a handful of files and painful at tens of thousands. This app uses the same **usbmux / lockdown / AFC** stack Apple’s own tools use, over the USB multiplexer that ships with the Apple Devices app — so listing, thumbnails, and copies stay fast on a large camera roll.
+
+## Features
+
+- Browse the camera roll in a grid (tested around **35,000 items**)
+- Thumbnails from the phone’s own thumbnail store (no HEIC decode for the grid)
+- Video duration badges from the movie header (not a full download)
+- Filters: photos, videos, Live Photos, RAW, screenshots, length, date, size
+- Copy at USB 3 speed with progress, honest throughput, and ETA
+- Live Photos: still + motion `.MOV` stay together
+- Windows **Date created** set to the capture time (Explorer sorts correctly)
+- Flat copy or `YYYY\YYYY-MM` folders
+- Resume: already-copied files are skipped
+- “Keep both” when iPhone names wrap past `IMG_9999`
+- Warns if the destination disk is too small
+- Optional delete from the phone, behind a typed confirmation
+
+## iMazing, iTunes, and Explorer
+
+| | iOS Transfer | iMazing | Apple Devices / iTunes | File Explorer (MTP) |
+|---|---|---|---|---|
+| Price | Free, open source | Paid licence | Free | Built in |
+| Copy photos / videos to PC | Yes | Yes | Yes, slower UX | Yes, slow on big libraries |
+| Full device backup, apps, SMS | No | Yes | Partial | No |
+| Fast USB 3 grid + thumbnails | Yes | Yes | No | No |
+| HEIC / Live Photo aware | Yes | Yes | Mixed | Mixed |
+
+Use this if you want **files on a disk**. Keep paying iMazing if you need backups, app data, or a full device manager.
 
 ## Requirements
 
-- Windows 10/11
-- **Apple Devices** app (or iTunes) installed — it provides the background
-  service (`AppleMobileDeviceProcess`, listening on `127.0.0.1:27015`) that
-  carries data over the cable. Without it nothing on the PC can see the phone.
-- The iPhone paired with this PC ("Trust This Computer") and unlocked
-
-Run `npm run doctor` to check all of this and get told exactly what is missing.
-
-## Getting started
+- **Windows 10 or 11**
+- **[Apple Devices](https://apps.microsoft.com/detail/9np83lwlpz9k)** (Microsoft Store) or iTunes — provides `AppleMobileDeviceProcess` on `127.0.0.1:27015`
+- iPhone or iPad **trusted** with this PC (“Trust This Computer”) and unlocked
+- USB cable (USB 3 is much faster than Wi-Fi pairing)
 
 ```bash
+npm run doctor
+```
+
+tells you exactly what is missing.
+
+## Install and run
+
+```bash
+git clone https://github.com/AlexBeesley/ios_transfer.git
+cd ios_transfer
 npm install
 npm start
 ```
 
-Build a standalone Windows app (no Node needed to run it):
+Standalone Windows build (no Node required to run):
 
 ```bash
 npm run package
 ```
 
-That produces `release\iOS Transfer-win32-x64\iOS Transfer.exe`, with a
-generated icon. Run it once, then right-click its taskbar button and choose
-"Pin to taskbar".
+That writes `release\iOS Transfer-win32-x64\iOS Transfer.exe`. Pin it to the taskbar after the first launch.
 
 Other scripts:
 
 ```bash
 npm run dev        # rebuild on change
-npm run typecheck  # tsc --noEmit
-npm run doctor     # diagnose the connection, step by step
-npm run e2e        # full check against an attached device, incl. a real copy
-npm run uitest     # run the UI on synthetic data, no device needed
-npm run icon       # regenerate build/icon.ico
-npm run package    # build a standalone .exe in release/
+npm run typecheck
+npm run doctor     # USB / pairing diagnostics
+npm run e2e        # real device check (copies several GB; E2E_QUICK=1 for a small copy)
+npm run uitest     # UI on synthetic data, no phone
+npm run icon
+npm run package
 ```
 
-`npm run e2e` copies several GB to verify throughput; set `E2E_QUICK=1` to check
-the logic without saturating a disk.
-
 ## How it works
-
-Windows exposes an iPhone over MTP, but MTP is slow and gives a poor view of the
-library. This app instead speaks the same protocols Apple's own tools use, over
-the USB multiplexer that ships with Apple Devices:
 
 ```
 renderer (React)
    │  IPC + thumb:// protocol
 main process
-   │
    ├── usbmux    TCP 127.0.0.1:27015 — enumerate devices, open device ports
-   ├── lockdown  device port 62078 — TLS session from the host pair record,
-   │             then StartService
-   └── AFC       Apple File Conduit — the media partition (/DCIM, /PhotoData)
+   ├── lockdown  device port 62078 — TLS from the host pair record, StartService
+   └── AFC       Apple File Conduit — /DCIM and /PhotoData
 ```
 
-`src/main/device/` holds that stack: `plist.ts` (XML + binary property lists),
-`usbmux.ts`, `lockdown.ts`, `afc.ts`, and `session.ts` which owns the connection
-pool.
+Code lives in `src/main/device/` (`plist.ts`, `usbmux.ts`, `lockdown.ts`, `afc.ts`, `session.ts`).
 
 ### Why it is fast
 
-AFC allows **one outstanding request per connection**, so throughput comes
-entirely from running a pool of them. Measured on an iPhone 17 Pro (iOS 26.1,
-35,449 items, 845 GB) over USB 3:
+AFC allows **one outstanding request per connection**, so speed comes from a pool. Measured on an iPhone 17 Pro (iOS 26.1, ~35k items, 845 GB) over USB 3:
 
 | Operation | Result |
 | --- | --- |
-| Trusted session established | 44 ms |
+| Trusted session | 44 ms |
 | List 46 folders / 35,206 items | 137 ms |
 | File metadata (size + date) | ~4,400 files/s |
 | Thumbnails | ~780–1,230/s, ~50 KB each |
 | Bulk copy | 72 MB/s sustained, 181 MB/s peak |
 
-Three decisions do most of the work:
+**Thumbnails are never decoded.** iOS already stores a ~360×480 JPEG at `/PhotoData/Thumbnails/V2/DCIM/<folder>/<file>/5005.JPG`. Videos use a parallel `VideoKeyFrames` tree.
 
-**Thumbnails are never decoded.** iOS already stores a ~360×480 JPEG next to
-every still at `/PhotoData/Thumbnails/V2/DCIM/<folder>/<file>/5005.JPG`. The app
-reads those directly, so it never touches a multi-megabyte HEIC and never needs
-an HEIC decoder. Videos have no entry there — their key frames live under a
-parallel `VideoKeyFrames` tree, which the app probes once and then remembers.
+**Video duration** is three small AFC reads of the QuickTime `moov` atom (~400 clips/s), cached, only for tiles on screen.
 
-**Video durations cost three small reads.** Running time is not in the
-filesystem metadata, so it comes from the QuickTime movie header. Rather than
-pull the file down, the app walks the top-level atom chain with AFC seeks:
-iPhone recordings lay out `ftyp`, then a multi-megabyte `mdat`, then `moov` at
-the end, so the media data is skipped entirely and only the header is read
-(~400 clips/s). Results are cached in memory and on disk, and only the videos
-actually on screen are ever asked for.
+**Capture dates** are stamped as Windows creation time via PowerShell in batches (`filetimes.ts`), so Explorer does not show “imported today” for everything.
 
-**Capture dates survive the copy.** Node can set access and modified times but
-not Windows' creation time, which is the column Explorer sorts by — so imported
-photos would otherwise all look created at import time. `filetimes.ts` batches
-the work out to PowerShell, one process per 400 files rather than per file.
+**Write concurrency follows the disk.** One stream on HDD, six on SSD. Throughput is measured from **completed files**, not write-cache absorption, so the ETA is honest.
 
-**Write concurrency follows the destination.** Reads want many parallel AFC
-connections; writes do not. Six concurrent streams onto a hard disk turn one
-sequential write into constant head seeking — measured on a Seagate ST2000DM008
-(a shingled drive), that gave 48 MB/s at a ~5 second average response time while
-the phone sat idle. The destination's media type is detected once per drive and
-the copy uses 1 stream on a hard disk, 6 on an SSD.
+**The grid paints from the listing first**; sizes and dates stream in behind it. Metadata never starves thumbnail connections.
 
-**Throughput is measured from files that landed.** Counting bytes as they are
-handed to the OS reports whatever the write cache will absorb — on a slow disk
-that read four times faster than the disk was actually writing, and the ETA was
-out by hours. The figure now comes from completed files over a 30-second window.
+## Limits
 
-**The grid appears before the metadata does.** Listing is ~40× faster than
-stat-ing every file, so the UI renders immediately from the listing (ordered by
-DCIM numbering, which is already chronological) while sizes and capture dates
-stream in behind it and re-sort the view.
+- Only media **physically on the device**. iCloud-only originals (“Optimize iPhone Storage”) cannot be copied until they are downloaded to the phone.
+- No albums, favourites, or Moments (that data is in a multi-GB `Photos.sqlite`).
+- One-way: iPhone → PC.
+- `.AAE` edit sidecars are hidden.
+- Wi-Fi pairing works but is ~40× slower than USB; use a cable.
 
-**Foreground work is protected.** The metadata sweep is capped below the pool
-size so thumbnails for the visible grid always find a free connection. Without
-that reservation the sweep holds every lane and the grid stays blank until it
-finishes.
+## License
 
-Thumbnails reach the renderer through a custom `thumb://` protocol rather than
-IPC, so image bytes are never serialized, and they are cached in memory (96 MB
-budget, LRU) and on disk under the app's user-data directory.
-
-## Notes and limits
-
-- Only assets physically on the device are listed. Items that live only in
-  iCloud ("Optimize iPhone Storage") have no original to copy.
-- Albums, favourites and moments are not shown. That metadata lives in
-  `PhotoData/Photos.sqlite`, which was 2.9 GB on the test device — too large to
-  copy off just to draw a sidebar. The date grouping comes from file timestamps.
-- Copying is one-way, device → PC.
-- `.AAE` edit sidecars are excluded from the grid.
-- iPhone file names repeat: the camera counter wraps past `IMG_9999` and starts
-  again in a new DCIM folder. On the test device 9,692 names were used more than
-  once, so a flat copy of the whole library would put 11,915 files in conflict.
-  The default is therefore "Keep both", and the copy dialog warns when the
-  current selection contains repeats. Destination naming is serialized across
-  transfer lanes so two files with the same name can never race for one path.
-- Windows keeps closed sockets in `TIME_WAIT` for two minutes and only has
-  ~16k ephemeral ports. Other iOS software polling the same service can exhaust
-  them, so the app pools its connections and retries `EADDRINUSE` with backoff.
+MIT. Not affiliated with Apple or DigiDNA / iMazing.

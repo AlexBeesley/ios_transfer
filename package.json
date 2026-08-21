@@ -1,7 +1,30 @@
 {
   "name": "ios-transfer",
   "version": "1.0.0",
-  "description": "Fast iPhone photo and video transfer for Windows over USB 3",
+  "description": "Free Windows app to copy iPhone photos and videos over USB 3. Open-source iMazing alternative for camera-roll transfer.",
+  "keywords": [
+    "iphone",
+    "ipad",
+    "ios",
+    "windows",
+    "photo-transfer",
+    "video-transfer",
+    "usb",
+    "heic",
+    "live-photos",
+    "imazing-alternative",
+    "afc",
+    "usbmux"
+  ],
+  "homepage": "https://github.com/AlexBeesley/ios_transfer",
+  "bugs": {
+    "url": "https://github.com/AlexBeesley/ios_transfer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexBeesley/ios_transfer.git"
+  },
+  "license": "MIT",
   "main": "dist/main/index.js",
   "private": true,
   "scripts": {
