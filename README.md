@@ -1,6 +1,6 @@
 # iOS Transfer — copy iPhone photos and videos to Windows (free)
 
-<p align="center">
+<p align="left">
   <img src="icons/icon128.png" width="128" height="128" alt="iOS Transfer — photo grid icon">
 </p>
 
